@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEVTECH | CORE AI SYSTEM</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <style>
+        :root {
+            --neon-blue: #00d4ff;
+            --neon-green: #39ff14;
+            --neon-red: #ff3131;
+            --bg-deep: #02050a;
+            --bg-panel: rgba(10, 15, 25, 0.95);
+            --glass: rgba(255, 255, 255, 0.05);
+            --font-main: 'Courier New', Courier, monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
+
+        body {
+            background-color: var(--bg-deep);
+            color: white;
+            font-family: var(--font-main);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* Efeito de Scanlines HUD */
+        body::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            z-index: 9999;
+            background-size: 100% 3px, 3px 100%;
+            pointer-events: none;
+        }
+
+        /* LAYOUT PRINCIPAL */
+        #core-interface {
+            display: grid;
+            height: 100vh;
+            grid-template-columns: 280px 1fr;
+        }
+
+        aside {
+            background: var(--bg-panel);
+            border-right: 1px solid var(--neon-blue);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .nav-item {
+            padding: 12px;
+            margin: 5px 0;
+            cursor: pointer;
+            color: #557;
+            border-left: 3px solid transparent;
+            transition: 0.3s;
+        }
+        .nav-item.active {
+            color: var(--neon-blue);
+            border-left: 3px solid var(--neon-blue);
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        main {
+            padding: 40px;
+            overflow-y: auto;
+            background: radial-gradient(circle at center, #0a1018 0%, #02050a 100%);
+        }
+
+        /* BIOMETRIC SCANNER OVERLAY */
+        #biometric-layer {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 20000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .scan-window {
+            width: 320px;
+            height: 320px;
+            border: 2px solid var(--neon-blue);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.2);
+        }
+
+        #webcam-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(1) contrast(1.2) brightness(0.8);
+        }
+
+        .scan-bar {
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            background: var(--neon-green);
+            box-shadow: 0 0 15px var(--neon-green);
+            top: 0;
+            animation: scanMove 2s infinite ease-in-out;
+        }
+
+        @keyframes scanMove {
+            0% { top: 0; }
+            50% { top: 100%; }
+            100% { top: 0; }
+        }
+
+        /* ROOT PANEL */
+        #root-panel {
+            position: fixed;
+            bottom: 20px; right: 20px;
+            background: #000;
+            border: 1px solid var(--neon-red);
+            padding: 15px;
+            z-index: 10001;
+            display: none;
+            box-shadow: 0 0 20px rgba(255, 49, 49, 0.3);
+        }
+
+        /* HUD ELEMENTS */
+        .hud-card {
+            background: var(--glass);
+            border: 1px solid rgba(0, 212, 255, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(5px);
+        }
+
+        .root-active .hud-card { cursor: move; border: 1px dashed var(--neon-green); }
+        .root-active .editable:hover { background: rgba(57, 255, 20, 0.1); outline: 1px solid var(--neon-green); }
+
+        .btn-core {
+            background: var(--neon-blue);
+            color: black;
+            border: none;
+            padding: 10px;
+            margin-top: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-family: var(--font-main);
+            transition: 0.3s;
+        }
+        .btn-core:hover { opacity: 0.8; box-shadow: 0 0 10px var(--neon-blue); }
+
+        .neon-text { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
+        .matrix-text { color: var(--neon-green); text-shadow: 0 0 10px var(--neon-green); }
+        .red-text { color: var(--neon-red); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #222; padding: 12px; text-align: left; }
+
+        #status-msg { margin-top: 10px; font-size: 0.9rem; letter-spacing: 2px; }
+    </style>
+</head>
+<body onload="initSystem()">
+
+    <div id="biometric-layer">
+        <h2 class="neon-text" id="scan-title">IDENTITY VERIFICATION REQUIRED</h2>
+        <p class="matrix-text" style="margin-bottom: 20px;">SYSTEM_OVERRIDE_DETECTED: ANALYZING BIOMETRIC SIGNATURE</p>
+       
+        <div class="scan-window">
+            <video id="webcam-feed" autoplay playsinline></video>
+            <div class="scan-bar"></div>
+            <div style="position:absolute; inset:0; border: 40px solid rgba(0, 212, 255, 0.1); pointer-events: none;"></div>
+        </div>
+
+        <p id="status-msg" class="neon-text">WAITING FOR SENSOR DATA...</p>
+    </div>
+
+    <div id="root-panel">
+        <h4 class="red-text"><i class="fas fa-microchip"></i> ROOT CORE OPERATOR</h4>
+        <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 5px;">
+            <button onclick="addNewCard()" class="btn-core" style="background: var(--neon-blue);">+ NEW DATA BLOCK</button>
+            <button onclick="saveChanges()" class="btn-core" style="background: var(--neon-green);">SYNC TO DATABASE</button>
+            <button onclick="exitRootMode()" class="btn-core" style="background: var(--neon-red); color: white; margin-top: 10px;">EXIT ROOT MODE</button>
+        </div>
+    </div>
+
+    <div id="core-interface">
+        <aside>
+            <div style="margin-bottom: 40px;">
+                <h2 class="neon-text">DEVTECH</h2>
+                <small class="matrix-text" id="access-level">LEVEL: USER_MODE</small>
+            </div>
+           
+            <nav>
+                <div class="nav-item active" onclick="navTo('p1')"><i class="fas fa-radar"></i> 01 DIAGNÓSTICO</div>
+                <div class="nav-item" onclick="navTo('p2')"><i class="fas fa-shield-alt"></i> 02 PROTEÇÃO</div>
+                <div class="nav-item" onclick="navTo('p3')"><i class="fas fa-brain"></i> 03 INFLUÊNCIA</div>
+                <div class="nav-item" onclick="navTo('p4')"><i class="fas fa-project-diagram"></i> 04 MÉTODOS</div>
+                <div class="nav-item" onclick="navTo('p5')"><i class="fas fa-users"></i> 05 CRIADORES</div>
+            </nav>
+
+            <div style="margin-top: auto;">
+                <button id="btn-login-root" class="btn-core" onclick="startRootAuth()" style="background: transparent; border: 1px solid var(--neon-blue); color: var(--neon-blue); width: 100%;">
+                    <i class="fas fa-fingerprint"></i> LOGIN ROOT SYSTEM
+                </button>
+            </div>
+        </aside>
+
+        <main id="main-content">
+            <div id="p1" class="page active">
+                <h1 class="neon-text editable">DIAGNÓSTICO DE AMEAÇAS</h1>
+                <div class="hud-card">
+                    <h3 class="matrix-text editable">Análise de Vetores 2026</h3>
+                    <p class="editable">Monitoramento global de ameaças persistentes avançadas (APTs) e zero-day exploits.</p>
+                </div>
+                <div class="hud-card">
+                    <h4 class="neon-text editable">Distribuição de Ataques</h4>
+                    <p class="editable">Ransomware (45%) | Phishing (30%) | DDoS (25%)</p>
+                </div>
+            </div>
+
+            <div id="p2" class="page">
+                <h1 class="neon-text editable">GUIA DE PROTEÇÃO</h1>
+                <div class="hud-card">
+                    <h3 class="matrix-text editable">Blindagem de Credenciais</h3>
+                    <p class="editable">A implementação de 2FA e chaves FIDO2 reduz em 99% o sucesso de sequestro de contas.</p>
+                </div>
+            </div>
+
+            <div id="p3" class="page">
+                <h1 class="neon-text editable">INFLUÊNCIA SOCIAL</h1>
+                <div class="hud-card" style="border-left: 4px solid var(--neon-red);">
+                    <h3 class="red-text editable">Engenharia Social</h3>
+                    <p class="editable">O hacking humano utiliza autoridade, urgência e escassez para contornar defesas digitais.</p>
+                </div>
+            </div>
+
+            <div id="p4" class="page">
+                <h1 class="neon-text editable">MÉTODOS DE SEGURANÇA</h1>
+                <div class="hud-card">
+                    <table id="sec-table">
+                        <thead>
+                            <tr><th class="editable">Protocolo</th><th class="editable">Status</th><th class="editable">Eficácia</th></tr>
+                        </thead>
+                        <tbody id="table-body">
+                            <tr><td class="editable">Firewall NextGen</td><td class="editable">Ativo</td><td class="editable">94%</td></tr>
+                            <tr><td class="editable">Neural IDS</td><td class="editable">Monitorando</td><td class="editable">99%</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="p5" class="page">
+                <h1 class="neon-text">CRIADORES DO SISTEMA</h1>
+                <div class="hud-card">
+                    <ul style="list-style: none; line-height: 2;" class="matrix-text">
+                        <li> Francisco Miguel Magri</li>
+                        <li> Franz Kramer da Silva</li>
+                        <li> Gabriel Travaglini Nogueira</li>
+                        <li> Luccas Manfredi</li>
+                        <li> Sophia Carolina</li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let isRoot = false;
+        let draggedElement = null;
+
+        // --- INICIALIZAÇÃO ---
+        function initSystem() {
+            const saved = localStorage.getItem('devtech_core_persist');
+            if (saved) document.getElementById('main-content').innerHTML = saved;
+        }
+
+        // --- NAVEGAÇÃO ---
+        function navTo(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        // --- AUTENTICAÇÃO ROOT & BIOMETRIA ---
+        async function startRootAuth() {
+            const user = prompt("ACCESS_ID:");
+            const pass = prompt("SECURITY_KEY:");
+
+            if (user === "admin" && pass === "devtech2026") {
+                await triggerBiometrics();
+            } else {
+                alert("ACCESS_DENIED: UNAUTHORIZED");
+            }
+        }
+
+        async function triggerBiometrics() {
+            const layer = document.getElementById('biometric-layer');
+            const video = document.getElementById('webcam-feed');
+            const status = document.getElementById('status-msg');
+           
+            layer.style.display = 'flex';
+
+            try {
+                // Solicita câmera real para o efeito cinematográfico
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+
+                status.innerText = "CAPTURING FACIAL DATA...";
+                status.className = "neon-text";
+
+                setTimeout(() => { status.innerText = "ANALYZING NEURAL SIGNATURE..."; }, 1500);
+                setTimeout(() => {
+                    status.innerText = "ACCESS GRANTED: WELCOME ADMIN";
+                    status.className = "matrix-text";
+                }, 3500);
+
+                setTimeout(() => {
+                    // Desliga a câmera e entra no ROOT
+                    stream.getTracks().forEach(track => track.stop());
+                    layer.style.display = 'none';
+                    enterRootMode();
+                }, 5000);
+
+            } catch (err) {
+                // Fallback caso não tenha câmera
+                status.innerText = "SENSOR ERROR: BYPASSING TO NEURAL OVERRIDE...";
+                setTimeout(() => { enterRootMode(); layer.style.display = 'none'; }, 3000);
+            }
+        }
+
+        // --- MODOS DE OPERAÇÃO ---
+        function enterRootMode() {
+            isRoot = true;
+            document.body.classList.add('root-active');
+            document.getElementById('root-panel').style.display = 'block';
+            document.getElementById('btn-login-root').style.display = 'none';
+            document.getElementById('access-level').innerText = "LEVEL: ROOT_OPERATOR";
+            document.getElementById('access-level').className = "red-text";
+
+            document.querySelectorAll('.editable').forEach(el => el.contentEditable = "true");
+            enableDragAndDrop(true);
+        }
+
+        function exitRootMode() {
+            isRoot = false;
+            document.body.classList.remove('root-active');
+            document.getElementById('root-panel').style.display = 'none';
+            document.getElementById('btn-login-root').style.display = 'block';
+            document.getElementById('access-level').innerText = "LEVEL: USER_MODE";
+            document.getElementById('access-level').className = "matrix-text";
+
+            document.querySelectorAll('.editable').forEach(el => el.contentEditable = "false");
+            enableDragAndDrop(false);
+            saveChanges();
+        }
+
+        // --- EDITOR & PERSISTÊNCIA ---
+        function saveChanges() {
+            const content = document.getElementById('main-content').innerHTML;
+            localStorage.setItem('devtech_core_persist', content);
+            if(isRoot) alert("DATABASE SYNCHRONIZED.");
+        }
+
+        function addNewCard() {
+            const activePage = document.querySelector('.page.active');
+            const card = document.createElement('div');
+            card.className = 'hud-card';
+            card.draggable = true;
+            card.innerHTML = `<h3 class="matrix-text editable" contenteditable="true">NEW_CORE_DATA</h3><p class="editable" contenteditable="true">Initialize parameters here...</p>`;
+            activePage.appendChild(card);
+            enableDragAndDrop(true);
+        }
+
+        // --- DRAG & DROP ENGINE ---
+        function enableDragAndDrop(active) {
+            document.querySelectorAll('.hud-card').forEach(card => {
+                card.draggable = active;
+                if (active) {
+                    card.addEventListener('dragstart', e => { draggedElement = card; });
+                    card.addEventListener('dragover', e => e.preventDefault());
+                    card.addEventListener('drop', e => {
+                        e.preventDefault();
+                        if (draggedElement !== card) {
+                            card.parentNode.insertBefore(draggedElement, card);
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html>
