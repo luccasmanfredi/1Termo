@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>NEXUS AI</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, Helvetica, sans-serif;
+}
+
+body{
+    background:#0f172a;
+    color:white;
+    padding-bottom:90px;
+}
+
+header{
+    background:#111827;
+    padding:15px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    position:sticky;
+    top:0;
+}
+
+.logo{
+    font-size:24px;
+    font-weight:bold;
+    color:#60a5fa;
+}
+
+.container{
+    padding:15px;
+    max-width:800px;
+    margin:auto;
+}
+
+.card{
+    background:#1e293b;
+    border-radius:15px;
+    padding:15px;
+    margin-bottom:15px;
+}
+
+.card h3{
+    margin-bottom:10px;
+}
+
+.text{
+    color:#cbd5e1;
+}
+
+input,
+select{
+    width:100%;
+    padding:12px;
+    margin-bottom:10px;
+    border:none;
+    border-radius:10px;
+    background:#334155;
+    color:white;
+}
+
+.filters{
+    display:flex;
+    gap:10px;
+}
+
+.store{
+    background:#1e293b;
+    padding:15px;
+    border-radius:12px;
+    margin-bottom:10px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+button{
+    border:none;
+    cursor:pointer;
+}
+
+.btn{
+    background:#2563eb;
+    color:white;
+    padding:10px 14px;
+    border-radius:10px;
+}
+
+.favorite{
+    background:none;
+    font-size:22px;
+}
+
+.chat-box{
+    max-height:300px;
+    overflow-y:auto;
+    margin-bottom:10px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.message{
+    padding:12px;
+    border-radius:12px;
+    max-width:80%;
+}
+
+.ai{
+    background:#4338ca;
+    align-self:flex-start;
+}
+
+.user{
+    background:#2563eb;
+    align-self:flex-end;
+}
+
+.chat-controls{
+    display:flex;
+    gap:10px;
+}
+
+.chat-controls input{
+    margin:0;
+}
+
+.chat-controls button{
+    width:70px;
+}
+
+nav{
+    position:fixed;
+    bottom:0;
+    width:100%;
+    background:#111827;
+    display:flex;
+    justify-content:space-around;
+    padding:12px;
+}
+
+.nav-button{
+    background:none;
+    color:#94a3b8;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+}
+
+.active{
+    color:#60a5fa;
+}
+
+.view{
+    display:none;
+}
+
+.view.active{
+    display:block;
+}
+
+.scanner-button{
+    position:fixed;
+    right:20px;
+    bottom:90px;
+    width:60px;
+    height:60px;
+    border-radius:50%;
+    background:#ec4899;
+    color:white;
+    font-size:24px;
+}
+
+#scanner{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:black;
+    display:none;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+    z-index:999;
+}
+
+.scan-box{
+    width:250px;
+    height:250px;
+    border:3px solid #ec4899;
+    margin-top:20px;
+    position:relative;
+    overflow:hidden;
+}
+
+.scan-line{
+    width:100%;
+    height:4px;
+    background:#ec4899;
+    position:absolute;
+    animation:scan 1.5s infinite alternate;
+}
+
+@keyframes scan{
+    from{
+        top:0;
+    }
+
+    to{
+        top:100%;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+
+<div class="logo">
+NEXUS AI
+</div>
+
+<button class="btn" id="themeButton">
+Tema
+</button>
+
+</header>
+
+<button class="scanner-button" id="scannerButton">
+📷
+</button>
+
+<div id="scanner">
+
+<h2>
+Escaneando...
+</h2>
+
+<div class="scan-box">
+<div class="scan-line"></div>
+</div>
+
+</div>
+
+<div class="container">
+
+<!-- HOME -->
+
+<section class="view active" id="home">
+
+<div class="card">
+
+<h3>
+Radar do Shopping
+</h3>
+
+<p class="text">
+Movimento tranquilo.
+</p>
+
+</div>
+
+<div class="card">
+
+<h3>
+Missão do Dia
+</h3>
+
+<p class="text">
+Pesquise lojas e ganhe descontos.
+</p>
+
+</div>
+
+</section>
+
+<!-- LOJAS -->
+
+<section class="view" id="stores">
+
+<input
+type="text"
+id="searchInput"
+placeholder="Buscar loja..."
+>
+
+<div class="filters">
+
+<select id="categoryFilter">
+
+<option value="all">
+Todas
+</option>
+
+<option value="Roupas">
+Roupas
+</option>
+
+<option value="Tecnologia">
+Tecnologia
+</option>
+
+<option value="Esportes">
+Esportes
+</option>
+
+</select>
+
+<select id="priceFilter">
+
+<option value="all">
+Todos
+</option>
+
+<option value="$">
+$
+</option>
+
+<option value="$$">
+$$
+</option>
+
+<option value="$$$">
+$$$
+</option>
+
+</select>
+
+</div>
+
+<div id="storeList"></div>
+
+</section>
+
+<!-- IA -->
+
+<section class="view" id="ai">
+
+<div class="card">
+
+<div class="chat-box" id="chatBox">
+
+<div class="message ai">
+Olá! Posso ajudar você.
+</div>
+
+</div>
+
+<div class="chat-controls">
+
+<input
+type="text"
+id="chatInput"
+placeholder="Digite aqui..."
+>
+
+<button class="btn" id="sendButton">
+➤
+</button>
+
+</div>
+
+</div>
+
+</section>
+
+<!-- PERFIL -->
+
+<section class="view" id="profile">
+
+<div class="card">
+
+<h3>
+Perfil
+</h3>
+
+<p class="text">
+Usuário conectado.
+</p>
+
+</div>
+
+<div class="card">
+
+<h3>
+Favoritos
+</h3>
+
+<div id="favoritesList"></div>
+
+</div>
+
+</section>
+
+</div>
+
+<nav>
+
+<button class="nav-button active" data-target="home">
+🏠
+<span>Início</span>
+</button>
+
+<button class="nav-button" data-target="stores">
+🛍️
+<span>Lojas</span>
+</button>
+
+<button class="nav-button" data-target="ai">
+✨
+<span>IA</span>
+</button>
+
+<button class="nav-button" data-target="profile">
+👤
+<span>Perfil</span>
+</button>
+
+</nav>
+
+<script>
+
+const stores = [
+    {
+        name:"Zara",
+        category:"Roupas",
+        price:"$$",
+        floor:"Piso 1",
+        promo:"50% OFF"
+    },
+
+    {
+        name:"Renner",
+        category:"Roupas",
+        price:"$",
+        floor:"Térreo",
+        promo:""
+    },
+
+    {
+        name:"Apple Store",
+        category:"Tecnologia",
+        price:"$$$",
+        floor:"Piso 2",
+        promo:"Novo iPhone"
+    },
+
+    {
+        name:"Centauro",
+        category:"Esportes",
+        price:"$$",
+        floor:"Piso 2",
+        promo:"Tênis em promoção"
+    }
+];
+
+let favorites = [];
+
+try{
+
+    const saved =
+    localStorage.getItem("favorites");
+
+    if(saved){
+        favorites = JSON.parse(saved);
+    }
+
+}catch(error){
+
+    favorites = [];
+
+}
+
+const storeList =
+document.getElementById("storeList");
+
+const searchInput =
+document.getElementById("searchInput");
+
+const categoryFilter =
+document.getElementById("categoryFilter");
+
+const priceFilter =
+document.getElementById("priceFilter");
+
+function renderStores(){
+
+    const search =
+    searchInput.value.toLowerCase();
+
+    const filtered =
+    stores.filter(function(store){
+
+        const matchName =
+        store.name.toLowerCase().includes(search);
+
+        const matchCategory =
+        categoryFilter.value === "all" ||
+        store.category === categoryFilter.value;
+
+        const matchPrice =
+        priceFilter.value === "all" ||
+        store.price === priceFilter.value;
+
+        return (
+            matchName &&
+            matchCategory &&
+            matchPrice
+        );
+
+    });
+
+    storeList.innerHTML = "";
+
+    filtered.forEach(function(store){
+
+        const div =
+        document.createElement("div");
+
+        div.className = "store";
+
+        let heart = "🤍";
+
+        if(favorites.includes(store.name)){
+            heart = "❤️";
+        }
+
+        div.innerHTML = `
+            <div>
+                <strong>${store.name}</strong>
+
+                <div class="text">
+                    ${store.category} • ${store.floor}
+                </div>
+
+                ${
+                    store.promo
+                    ?
+                    `<small>${store.promo}</small>`
+                    :
+                    ""
+                }
+            </div>
+
+            <button
+                class="favorite"
+                data-store="${store.name}"
+            >
+                ${heart}
+            </button>
+        `;
+
+        const button =
+        div.querySelector(".favorite");
+
+        button.addEventListener(
+            "click",
+            function(){
+
+                toggleFavorite(store.name);
+
+            }
+        );
+
+        storeList.appendChild(div);
+
+    });
+
+}
+
+function toggleFavorite(name){
+
+    if(favorites.includes(name)){
+
+        favorites =
+        favorites.filter(function(item){
+
+            return item !== name;
+
+        });
+
+    }else{
+
+        favorites.push(name);
+
+    }
+
+    try{
+
+        localStorage.setItem(
+            "favorites",
+            JSON.stringify(favorites)
+        );
+
+    }catch(error){}
+
+    renderStores();
+    renderFavorites();
+
+}
+
+function renderFavorites(){
+
+    const favoritesList =
+    document.getElementById("favoritesList");
+
+    if(favorites.length === 0){
+
+        favoritesList.innerHTML =
+        "<p class='text'>Nenhum favorito.</p>";
+
+        return;
+
+    }
+
+    favoritesList.innerHTML = "";
+
+    favorites.forEach(function(item){
+
+        const div =
+        document.createElement("div");
+
+        div.style.marginBottom = "8px";
+
+        div.innerHTML = "• " + item;
+
+        favoritesList.appendChild(div);
+
+    });
+
+}
+
+searchInput.addEventListener(
+    "input",
+    renderStores
+);
+
+categoryFilter.addEventListener(
+    "change",
+    renderStores
+);
+
+priceFilter.addEventListener(
+    "change",
+    renderStores
+);
+
+const navButtons =
+document.querySelectorAll(".nav-button");
+
+navButtons.forEach(function(button){
+
+    button.addEventListener(
+        "click",
+        function(){
+
+            navButtons.forEach(function(btn){
+
+                btn.classList.remove("active");
+
+            });
+
+            button.classList.add("active");
+
+            const target =
+            button.getAttribute("data-target");
+
+            document
+            .querySelectorAll(".view")
+            .forEach(function(view){
+
+                view.classList.remove("active");
+
+            });
+
+            document
+            .getElementById(target)
+            .classList.add("active");
+
+        }
+    );
+
+});
+
+const chatBox =
+document.getElementById("chatBox");
+
+const chatInput =
+document.getElementById("chatInput");
+
+function addMessage(text,type){
+
+    const div =
+    document.createElement("div");
+
+    div.className =
+    "message " + type;
+
+    div.innerText = text;
+
+    chatBox.appendChild(div);
+
+    chatBox.scrollTop =
+    chatBox.scrollHeight;
+
+}
+
+function processAI(text){
+
+    const lower =
+    text.toLowerCase();
+
+    if(lower.includes("tenis")){
+
+        addMessage(
+            "A Centauro possui promoções hoje.",
+            "ai"
+        );
+
+    }else if(lower.includes("iphone")){
+
+        addMessage(
+            "A Apple Store possui novidades.",
+            "ai"
+        );
+
+    }else{
+
+        addMessage(
+            "Estou analisando sua solicitação.",
+            "ai"
+        );
+
+    }
+
+}
+
+document
+.getElementById("sendButton")
+.addEventListener(
+    "click",
+    function(){
+
+        const text =
+        chatInput.value.trim();
+
+        if(text === ""){
+            return;
+        }
+
+        addMessage(text,"user");
+
+        chatInput.value = "";
+
+        setTimeout(function(){
+
+            processAI(text);
+
+        },600);
+
+    }
+);
+
+chatInput.addEventListener(
+    "keypress",
+    function(event){
+
+        if(event.key === "Enter"){
+
+            document
+            .getElementById("sendButton")
+            .click();
+
+        }
+
+    }
+);
+
+document
+.getElementById("themeButton")
+.addEventListener(
+    "click",
+    function(){
+
+        if(
+            document.body.style.background ===
+            "white"
+        ){
+
+            document.body.style.background =
+            "#0f172a";
+
+            document.body.style.color =
+            "white";
+
+        }else{
+
+            document.body.style.background =
+            "white";
+
+            document.body.style.color =
+            "black";
+
+        }
+
+    }
+);
+
+document
+.getElementById("scannerButton")
+.addEventListener(
+    "click",
+    function(){
+
+        const scanner =
+        document.getElementById("scanner");
+
+        scanner.style.display = "flex";
+
+        setTimeout(function(){
+
+            scanner.style.display = "none";
+
+            addMessage(
+                "Produto identificado com sucesso.",
+                "ai"
+            );
+
+        },2500);
+
+    }
+);
+
+window.onload = function(){
+
+    renderStores();
+    renderFavorites();
+
+};
+
+</script>
+
+</body>
+</html>
